@@ -27,3 +27,7 @@ Implementação em verilog de um processador multiciclo baseado na arquitetura M
 6. Multiplicador
 7. Divisor
 8. Controle
+
+## Sinais
+
+![image](https://user-images.githubusercontent.com/92769975/184546779-103b1673-0a48-487a-9025-8c379e516d50.png)
