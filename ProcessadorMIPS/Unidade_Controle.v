@@ -12,7 +12,7 @@ module Unidade_Controle (
     // internal reg
     reg [5:0] state; // state reg
     reg [4:0] counter; // state counter
-    reg [5:0] next_state // temp reg to store next state if needed
+    reg [5:0] next_state; // temp reg to store next state if needed
 
     // state definition
     parameter [5:0] RESET_s = 6'd0, // send RESET signal
