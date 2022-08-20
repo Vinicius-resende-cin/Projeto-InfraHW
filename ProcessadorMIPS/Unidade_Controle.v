@@ -1,6 +1,8 @@
 module Unidade_Controle (
     input clock, RESET_in, // general inputs
     input [5:0] opcode, funct, // instruction inputs
+    input GT, LT, ET, O, N, ZERO, // ALU inputs
+    input Div0, // division/0
     output RESET_out, BREAK, PCwrite, MemRead, MemWrite, IRwrite, RegWrite, MultOp, DivOp, EPCwrite, // 1 bit action signals
     output IorD, BHsel, RegSrc, ALUsrcA, ShamtSrc, ShiftData, ALUtoReg, MorDHI, MorDLO, // 1 bit MUX signals
     output [1:0] MemData, RedDst, ALUsrcB, // 2 bit MUX signals
@@ -56,46 +58,46 @@ module Unidade_Controle (
                     WriteHILO_s = 6'd38; // write in HI/LO registers
 
     // intruction definition
-    parameter [5:0] j = (opcode == 6'h2),
-                    jal = (opcode == 6'h3),
-                    beq = (opcode == 6'h4),
-                    bne = (opcode == 6'h5),
-                    ble = (opcode == 6'h6),
-                    bgt = (opcode == 6'h7),
-                    addi = (opcode == 6'h8),
-                    addiu = (opcode == 6'h9),
-                    slti = (opcode == 6'ha),
-                    lui = (opcode == 6'hf),
-                    lb = (opcode == 6'h20),
-                    lh = (opcode == 6'h21),
-                    lw = (opcode == 6'h23),
-                    sb = (opcode == 6'h28),
-                    sh = (opcode == 6'h29),
-                    sw = (opcode == 6'h2b),
-                    // R format:
-                    sll = (opcode == 6'h0 && funct == 6'h0),
-                    srl = (opcode == 6'h0 && funct == 6'h2),
-                    sra = (opcode == 6'h0 && funct == 6'h3),
-                    sllv = (opcode == 6'h0 && funct == 6'h4),
-                    push = (opcode == 6'h0 && funct == 6'h5),
-                    pop = (opcode == 6'h0 && funct == 6'h6),
-                    srav = (opcode == 6'h0 && funct == 6'h7),
-                    jr = (opcode == 6'h0 && funct == 6'h8),
-                    break = (opcode == 6'h0 && funct == 6'hd),
-                    mfhi = (opcode == 6'h0 && funct == 6'h10),
-                    mflo = (opcode == 6'h0 && funct == 6'h12),
-                    rte = (opcode == 6'h0 && funct == 6'h13),
-                    mult = (opcode == 6'h0 && funct == 6'h18),
-                    div = (opcode == 6'h0 && funct == 6'h1a),
-                    add = (opcode == 6'h0 && funct == 6'h20),
-                    sub = (opcode == 6'h0 && funct == 6'h22),
-                    _and = (opcode == 6'h0 && funct == 6'h24),
-                    slt = (opcode == 6'h0 && funct == 6'h2a);
+    parameter j = (opcode == 6'h2),
+              jal = (opcode == 6'h3),
+              beq = (opcode == 6'h4),
+              bne = (opcode == 6'h5),
+              ble = (opcode == 6'h6),
+              bgt = (opcode == 6'h7),
+              addi = (opcode == 6'h8),
+              addiu = (opcode == 6'h9),
+              slti = (opcode == 6'ha),
+              lui = (opcode == 6'hf),
+              lb = (opcode == 6'h20),
+              lh = (opcode == 6'h21),
+              lw = (opcode == 6'h23),
+              sb = (opcode == 6'h28),
+              sh = (opcode == 6'h29),
+              sw = (opcode == 6'h2b),
+              // R format:
+              sll = (opcode == 6'h0 && funct == 6'h0),
+              srl = (opcode == 6'h0 && funct == 6'h2),
+              sra = (opcode == 6'h0 && funct == 6'h3),
+              sllv = (opcode == 6'h0 && funct == 6'h4),
+              push = (opcode == 6'h0 && funct == 6'h5),
+              pop = (opcode == 6'h0 && funct == 6'h6),
+              srav = (opcode == 6'h0 && funct == 6'h7),
+              jr = (opcode == 6'h0 && funct == 6'h8),
+              break = (opcode == 6'h0 && funct == 6'hd),
+              mfhi = (opcode == 6'h0 && funct == 6'h10),
+              mflo = (opcode == 6'h0 && funct == 6'h12),
+              rte = (opcode == 6'h0 && funct == 6'h13),
+              mult = (opcode == 6'h0 && funct == 6'h18),
+              div = (opcode == 6'h0 && funct == 6'h1a),
+              add = (opcode == 6'h0 && funct == 6'h20),
+              sub = (opcode == 6'h0 && funct == 6'h22),
+              _and = (opcode == 6'h0 && funct == 6'h24),
+              slt = (opcode == 6'h0 && funct == 6'h2a);
 
     // initial state
     initial begin
-        state = PCread_s;
-        counter = 4'd0;
+        state = RESET_s;
+        counter = 5'd0;
     end
 
     // state selection
@@ -116,13 +118,13 @@ module Unidade_Controle (
             end
             PCread_s: begin
                 state <= MemWait_s;
-                next_state <= (opcode == Rformat && (funct == pop || funct == push))? InstDecSP_s : InstDec_s;
+                next_state = (pop || push)? InstDecSP_s : InstDec_s;
             end
             MemWait_s: begin
                 state <= next_state;
             end
             InstDecSP_s: begin
-                state <= (funct == push)? ALUopSP_s : MemAdd_s;
+                state <= (push)? ALUopSP_s : MemAdd_s;
             end
             InstDec_s: begin
                 state <= (break)? BREAK_s :
@@ -142,13 +144,229 @@ module Unidade_Controle (
                          (jal)? JandSave_s :
                          PCtoEPC_s;
             end
-            ...
-            default: 
+            ALUopSP_s: begin
+                state <= SPwrite_s;
+            end
+            SPwrite_s: begin
+                state <= (push)? SPtoMem_s : PCread_s;
+            end
+            SPtoMem_s: begin
+                state <= MemWrite_s;
+            end
+            MemAdd_s: begin
+                state <= (sw)? MemWrite_s : MemRead_s;
+            end 
+            MemRead_s: begin
+                state <= MemWait_s;
+                next_state = (lw || pop)? MemToReg_s : BHsel_s;
+            end
+            MemWrite_s: begin
+                state <= PCread_s;
+            end 
+            BHsel_s: begin
+                state <= (sh || sb)? MemWrite_s : MemToReg_s;
+            end
+            MemToReg_s: begin
+                state <= (pop)? ALUopSP_s : PCread_s;
+            end 
+            Jump_s: begin
+                state <= PCread_s;
+            end
+            StorePC_s: begin
+                state <= JandSave_s;
+            end
+            JandSave_s: begin
+                state <= PCread_s;
+            end
+            PCtoEPC_s: begin
+                state <= RoutineC_s;
+            end
+            RoutineC_s: begin
+                state <= GoToRout_s;
+            end
+            GoToRout_s: begin
+                state <= MemWait_s;
+                next_state = RoutToPC_s;
+            end
+            RoutToPC_s: begin
+                state <= PCread_s;
+            end
+            LoadImd_s: begin
+                state <= PCread_s;
+            end
+            EPCtoPC_s: begin
+                state <= PCread_s;
+            end
+            LoadLO_s: begin
+                state <= PCread_s;
+            end 
+            LoadHI_s: begin
+                state <= PCread_s;
+            end 
+            Compare_s: begin
+                state <= (bne)? ((ET)? PCread_s : ALUtoPC_s) :
+                         (beq)? ((ET)? ALUtoPC_s : PCread_s) :
+                         (bgt)? ((GT)? ALUToPC_s : PCread_s) :
+                         (ble)? ((LT)? ALUtoPC_s : PCread_s);
+            end
+            ALUtoPC_s: begin
+                state <= PCread_s;
+            end
+            ShiftReg_s: begin
+                state <= ShiftOp_s;
+            end 
+            ShiftImd_s: begin
+                state <= ShiftOp_s;
+            end 
+            ShiftOp_s: begin
+                state <= ShiftToReg_s;
+            end
+            ShiftToReg_s: begin
+                state <= PCread_s;
+            end
+            ALUjToPC_s: begin
+                state <= PCread_s;
+            end 
+            ALUop_s: begin
+                state <= ALUtoReg_s;
+            end
+            ALUtoReg_s: begin
+                state <= PCread_s;
+            end 
+            Div_s: begin
+                state <= (Div0)? PCtoEPC_s : ((counter == 5'd32)? WriteHILO_s : Div_s);
+                counter = (Div0)? 5'd0 : counter + 1;
+            end
+            Mult_s: begin
+                state <= (counter == 5'd32)? WriteHILO_s : Mult_s;
+                counter = counter + 1;
+            end
+            WriteHILO_s: begin
+                counter = 5'd0;
+                state <= PCread_s;
+            end
+            default: state <= BREAK_s;
         endcase
     end
 
     // outputs selection
     always @(posedge clock, negedge RESET_in) begin
-        
+        case (state)
+            RESET_s: begin
+                
+            end
+            RESETsp_s: begin
+                
+            end
+            BREAK_s: begin
+                
+            end
+            PCread_s: begin
+                
+            end
+            MemWait_s: begin
+                
+            end
+            InstDecSP_s: begin
+                
+            end
+            InstDec_s: begin
+                
+            end
+            ALUopSP_s: begin
+                
+            end
+            SPwrite_s: begin
+                
+            end
+            SPtoMem_s: begin
+                
+            end
+            MemAdd_s: begin
+                
+            end 
+            MemRead_s: begin
+                
+            end
+            MemWrite_s: begin
+                
+            end 
+            BHsel_s: begin
+                
+            end
+            MemToReg_s: begin
+                
+            end 
+            Jump_s: begin
+                
+            end
+            StorePC_s: begin
+                
+            end
+            JandSave_s: begin
+                
+            end
+            PCtoEPC_s: begin
+                
+            end
+            RoutineC_s: begin
+                
+            end
+            GoToRout_s: begin
+                
+            end
+            RoutToPC_s: begin
+                
+            end
+            LoadImd_s: begin
+                
+            end
+            EPCtoPC_s: begin
+                
+            end
+            LoadLO_s: begin
+                
+            end 
+            LoadHI_s: begin
+                
+            end 
+            Compare_s: begin
+                
+            end
+            ALUtoPC_s: begin
+                
+            end
+            ShiftReg_s: begin
+                
+            end 
+            ShiftImd_s: begin
+                
+            end 
+            ShiftOp_s: begin
+                
+            end
+            ShiftToReg_s: begin
+                
+            end
+            ALUjToPC_s: begin
+                
+            end 
+            ALUop_s: begin
+                
+            end
+            ALUtoReg_s: begin
+                
+            end 
+            Div_s: begin
+                
+            end
+            Mult_s: begin
+                
+            end
+            WriteHILO_s: begin
+                
+            end
+            default: 
+        endcase
     end
 endmodule
