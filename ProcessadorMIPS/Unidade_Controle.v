@@ -1,7 +1,7 @@
 module Unidade_Controle (
     input clock, RESET_in, // general inputs
     input [5:0] opcode, funct, // instruction inputs
-    input GT, LT, ET, O, N, ZERO, // ALU inputs
+    input GT, LT, ET, O, N, ZERO,// ALU inputs
     input Div0, // division/0
     output RESET_out, BREAK, PCwrite, MemRead, MemWrite, IRwrite, RegWrite, MultOp, DivOp, EPCwrite, // 1 bit action signals
     output IorD, BHsel, RegSrc, ALUsrcA, ShamtSrc, ShiftData, ALUtoReg, MorDHI, MorDLO, // 1 bit MUX signals
@@ -11,9 +11,9 @@ module Unidade_Controle (
     output [3:0] RegData // 4 bit MUX signal
 );
 
-    // internal reg
+    // internal registers
     reg [5:0] state; // state reg
-    reg [4:0] counter; // state counter
+    reg [5:0] counter; // state counter
     reg [5:0] next_state; // temp reg to store next state if needed
 
     // state definition
@@ -58,46 +58,51 @@ module Unidade_Controle (
                     WriteHILO_s = 6'd38; // write in HI/LO registers
 
     // intruction definition
-    parameter j = (opcode == 6'h2),
-              jal = (opcode == 6'h3),
-              beq = (opcode == 6'h4),
-              bne = (opcode == 6'h5),
-              ble = (opcode == 6'h6),
-              bgt = (opcode == 6'h7),
-              addi = (opcode == 6'h8),
-              addiu = (opcode == 6'h9),
-              slti = (opcode == 6'ha),
-              lui = (opcode == 6'hf),
-              lb = (opcode == 6'h20),
-              lh = (opcode == 6'h21),
-              lw = (opcode == 6'h23),
-              sb = (opcode == 6'h28),
-              sh = (opcode == 6'h29),
-              sw = (opcode == 6'h2b),
-              // R format:
-              sll = (opcode == 6'h0 && funct == 6'h0),
-              srl = (opcode == 6'h0 && funct == 6'h2),
-              sra = (opcode == 6'h0 && funct == 6'h3),
-              sllv = (opcode == 6'h0 && funct == 6'h4),
-              push = (opcode == 6'h0 && funct == 6'h5),
-              pop = (opcode == 6'h0 && funct == 6'h6),
-              srav = (opcode == 6'h0 && funct == 6'h7),
-              jr = (opcode == 6'h0 && funct == 6'h8),
-              break = (opcode == 6'h0 && funct == 6'hd),
-              mfhi = (opcode == 6'h0 && funct == 6'h10),
-              mflo = (opcode == 6'h0 && funct == 6'h12),
-              rte = (opcode == 6'h0 && funct == 6'h13),
-              mult = (opcode == 6'h0 && funct == 6'h18),
-              div = (opcode == 6'h0 && funct == 6'h1a),
-              add = (opcode == 6'h0 && funct == 6'h20),
-              sub = (opcode == 6'h0 && funct == 6'h22),
-              _and = (opcode == 6'h0 && funct == 6'h24),
-              slt = (opcode == 6'h0 && funct == 6'h2a);
+    reg j, jal, beq, bne, ble, bgt, addi, addiu, slti, lui, lb, lh, lw, sb, sh, sw, sll, srl, sra, sllv,
+              push, pop, srav, jr, break, mfhi, mflo, rte, mult, div, add, sub, _and, slt;
+
+    always @(posedge clock, posedge RESET_in) begin
+        j = (opcode == 6'h2);
+        jal = (opcode == 6'h3);
+        beq = (opcode == 6'h4);
+        bne = (opcode == 6'h5);
+        ble = (opcode == 6'h6);
+        bgt = (opcode == 6'h7);
+        addi = (opcode == 6'h8);
+        addiu = (opcode == 6'h9);
+        slti = (opcode == 6'ha);
+        lui = (opcode == 6'hf);
+        lb = (opcode == 6'h20);
+        lh = (opcode == 6'h21);
+        lw = (opcode == 6'h23);
+        sb = (opcode == 6'h28);
+        sh = (opcode == 6'h29);
+        sw = (opcode == 6'h2b);
+        // R format:
+        sll = (opcode == 6'h0 && funct == 6'h0);
+        srl = (opcode == 6'h0 && funct == 6'h2);
+        sra = (opcode == 6'h0 && funct == 6'h3);
+        sllv = (opcode == 6'h0 && funct == 6'h4);
+        push = (opcode == 6'h0 && funct == 6'h5);
+        pop = (opcode == 6'h0 && funct == 6'h6);
+        srav = (opcode == 6'h0 && funct == 6'h7);
+        jr = (opcode == 6'h0 && funct == 6'h8);
+        break = (opcode == 6'h0 && funct == 6'hd);
+        mfhi = (opcode == 6'h0 && funct == 6'h10);
+        mflo = (opcode == 6'h0 && funct == 6'h12);
+        rte = (opcode == 6'h0 && funct == 6'h13);
+        mult = (opcode == 6'h0 && funct == 6'h18);
+        div = (opcode == 6'h0 && funct == 6'h1a);
+        add = (opcode == 6'h0 && funct == 6'h20);
+        sub = (opcode == 6'h0 && funct == 6'h22);
+        _and = (opcode == 6'h0 && funct == 6'h24);
+        slt = (opcode == 6'h0 && funct == 6'h2a);
+    end
 
     // initial state
     initial begin
         state = RESET_s;
-        counter = 5'd0;
+        counter = 6'd0;
     end
 
     // state selection
@@ -118,10 +123,14 @@ module Unidade_Controle (
             end
             PCread_s: begin
                 state <= MemWait_s;
-                next_state = (pop || push)? InstDecSP_s : InstDec_s;
+                next_state = InstWrite_s;
+            end
+            InstWrite_s: begin
+                state <= (pop || push)? InstDecSP_s : InstDec_s;
             end
             MemWait_s: begin
                 state <= next_state;
+                next_state <= 6'bz;
             end
             InstDecSP_s: begin
                 state <= (push)? ALUopSP_s : MemAdd_s;
@@ -206,8 +215,9 @@ module Unidade_Controle (
             Compare_s: begin
                 state <= (bne)? ((ET)? PCread_s : ALUtoPC_s) :
                          (beq)? ((ET)? ALUtoPC_s : PCread_s) :
-                         (bgt)? ((GT)? ALUToPC_s : PCread_s) :
-                         (ble)? ((LT)? ALUtoPC_s : PCread_s);
+                         (bgt)? ((GT)? ALUtoPC_s : PCread_s) :
+                         (ble)? ((LT)? ALUtoPC_s : PCread_s) :
+                         6'bz;
             end
             ALUtoPC_s: begin
                 state <= PCread_s;
@@ -234,15 +244,15 @@ module Unidade_Controle (
                 state <= PCread_s;
             end 
             Div_s: begin
-                state <= (Div0)? PCtoEPC_s : ((counter == 5'd32)? WriteHILO_s : Div_s);
-                counter = (Div0)? 5'd0 : counter + 1;
+                state <= (Div0)? PCtoEPC_s : ((counter == 6'd32)? WriteHILO_s : Div_s);
+                counter = (Div0)? 6'd0 : counter + 1;
             end
             Mult_s: begin
-                state <= (counter == 5'd32)? WriteHILO_s : Mult_s;
+                state <= (counter == 6'd32)? WriteHILO_s : Mult_s;
                 counter = counter + 1;
             end
             WriteHILO_s: begin
-                counter = 5'd0;
+                counter = 6'd0;
                 state <= PCread_s;
             end
             default: state <= BREAK_s;
@@ -250,7 +260,7 @@ module Unidade_Controle (
     end
 
     // outputs selection
-    always @(posedge clock, negedge RESET_in) begin
+    /*always @(posedge clock, negedge RESET_in) begin
         case (state)
             RESET_s: begin
                 
@@ -368,5 +378,5 @@ module Unidade_Controle (
             end
             default: 
         endcase
-    end
+    end*/
 endmodule
