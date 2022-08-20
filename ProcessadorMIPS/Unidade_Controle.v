@@ -217,7 +217,7 @@ module Unidade_Controle (
                          (beq)? ((ET)? ALUtoPC_s : PCread_s) :
                          (bgt)? ((GT)? ALUtoPC_s : PCread_s) :
                          (ble)? ((LT)? ALUtoPC_s : PCread_s) :
-                         6'bz;
+                         6'bx;
             end
             ALUtoPC_s: begin
                 state <= PCread_s;
