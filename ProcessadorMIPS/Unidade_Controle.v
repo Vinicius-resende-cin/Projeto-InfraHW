@@ -59,7 +59,7 @@ module Unidade_Controle (
 
     // intruction definition
     reg j, jal, beq, bne, ble, bgt, addi, addiu, slti, lui, lb, lh, lw, sb, sh, sw, sll, srl, sra, sllv,
-              push, pop, srav, jr, break, mfhi, mflo, rte, mult, div, add, sub, _and, slt;
+        push, pop, srav, jr, break, mfhi, mflo, rte, mult, div, add, sub, _and, slt;
 
     always @(posedge clock, posedge RESET_in) begin
         j = (opcode == 6'h2);
