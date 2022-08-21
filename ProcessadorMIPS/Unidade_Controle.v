@@ -109,158 +109,158 @@ module Unidade_Controle (
     always @(posedge clock, posedge RESET_in) begin
         if (RESET_in == 1) begin
             state = RESET_s;
+        end else begin
+            case (state)
+                RESET_s: begin
+                    state <= RESETsp_s;
+                end
+                RESETsp_s: begin
+                    state <= PCread_s;
+                end
+                BREAK_s: begin
+                    state <= BREAK_s;
+                end
+                PCread_s: begin
+                    state <= MemWait_s;
+                    next_state = InstWrite_s;
+                end
+                InstWrite_s: begin
+                    state <= (pop || push)? InstDecSP_s : InstDec_s;
+                end
+                MemWait_s: begin
+                    state <= next_state;
+                    next_state <= 6'bz;
+                end
+                InstDecSP_s: begin
+                    state <= (push)? ALUopSP_s : MemAdd_s;
+                end
+                InstDec_s: begin
+                    state <= (break)? BREAK_s :
+                            (lui)? LoadImd_s :
+                            (rte)? EPCtoPC_s :
+                            (mflo)? LoadLO_s :
+                            (mfhi)? LoadHI_s :
+                            (bne || beq || bgt || ble)? Compare_s :
+                            (mult)? Mult_s :
+                            (div)? Div_s :
+                            (slti || addi || addiu || add || _and || sub || slt)? ALUop_s :
+                            (jr)? ALUjToPC_s :
+                            (sll || srl || sra)? ShiftImd_s :
+                            (sllv || srav)? ShiftReg_s :
+                            (lw || lh || lb || sw || sh || sb)? MemAdd_s :
+                            (j)? Jump_s :
+                            (jal)? JandSave_s :
+                            PCtoEPC_s;
+                end
+                ALUopSP_s: begin
+                    state <= SPwrite_s;
+                end
+                SPwrite_s: begin
+                    state <= (push)? SPtoMem_s : PCread_s;
+                end
+                SPtoMem_s: begin
+                    state <= MemWrite_s;
+                end
+                MemAdd_s: begin
+                    state <= (sw)? MemWrite_s : MemRead_s;
+                end 
+                MemRead_s: begin
+                    state <= MemWait_s;
+                    next_state = (lw || pop)? MemToReg_s : BHsel_s;
+                end
+                MemWrite_s: begin
+                    state <= PCread_s;
+                end 
+                BHsel_s: begin
+                    state <= (sh || sb)? MemWrite_s : MemToReg_s;
+                end
+                MemToReg_s: begin
+                    state <= (pop)? ALUopSP_s : PCread_s;
+                end 
+                Jump_s: begin
+                    state <= PCread_s;
+                end
+                StorePC_s: begin
+                    state <= JandSave_s;
+                end
+                JandSave_s: begin
+                    state <= PCread_s;
+                end
+                PCtoEPC_s: begin
+                    state <= RoutineC_s;
+                end
+                RoutineC_s: begin
+                    state <= GoToRout_s;
+                end
+                GoToRout_s: begin
+                    state <= MemWait_s;
+                    next_state = RoutToPC_s;
+                end
+                RoutToPC_s: begin
+                    state <= PCread_s;
+                end
+                LoadImd_s: begin
+                    state <= PCread_s;
+                end
+                EPCtoPC_s: begin
+                    state <= PCread_s;
+                end
+                LoadLO_s: begin
+                    state <= PCread_s;
+                end 
+                LoadHI_s: begin
+                    state <= PCread_s;
+                end 
+                Compare_s: begin
+                    state <= (bne)? ((ET)? PCread_s : ALUtoPC_s) :
+                            (beq)? ((ET)? ALUtoPC_s : PCread_s) :
+                            (bgt)? ((GT)? ALUtoPC_s : PCread_s) :
+                            (ble)? ((LT)? ALUtoPC_s : PCread_s) :
+                            6'bx;
+                end
+                ALUtoPC_s: begin
+                    state <= PCread_s;
+                end
+                ShiftReg_s: begin
+                    state <= ShiftOp_s;
+                end 
+                ShiftImd_s: begin
+                    state <= ShiftOp_s;
+                end 
+                ShiftOp_s: begin
+                    state <= ShiftToReg_s;
+                end
+                ShiftToReg_s: begin
+                    state <= PCread_s;
+                end
+                ALUjToPC_s: begin
+                    state <= PCread_s;
+                end 
+                ALUop_s: begin
+                    state <= ALUtoReg_s;
+                end
+                ALUtoReg_s: begin
+                    state <= PCread_s;
+                end 
+                Div_s: begin
+                    state <= (Div0)? PCtoEPC_s : ((counter == 6'd32)? WriteHILO_s : Div_s);
+                    counter = (Div0)? 6'd0 : counter + 1;
+                end
+                Mult_s: begin
+                    state <= (counter == 6'd32)? WriteHILO_s : Mult_s;
+                    counter = counter + 1;
+                end
+                WriteHILO_s: begin
+                    counter = 6'd0;
+                    state <= PCread_s;
+                end
+                default: state <= BREAK_s;
+            endcase
         end
-
-        case (state)
-            RESET_s: begin
-                state <= RESETsp_s;
-            end
-            RESETsp_s: begin
-                state <= PCread_s;
-            end
-            BREAK_s: begin
-                state <= BREAK_s;
-            end
-            PCread_s: begin
-                state <= MemWait_s;
-                next_state = InstWrite_s;
-            end
-            InstWrite_s: begin
-                state <= (pop || push)? InstDecSP_s : InstDec_s;
-            end
-            MemWait_s: begin
-                state <= next_state;
-                next_state <= 6'bz;
-            end
-            InstDecSP_s: begin
-                state <= (push)? ALUopSP_s : MemAdd_s;
-            end
-            InstDec_s: begin
-                state <= (break)? BREAK_s :
-                         (lui)? LoadImd_s :
-                         (rte)? EPCtoPC_s :
-                         (mflo)? LoadLO_s :
-                         (mfhi)? LoadHI_s :
-                         (bne || beq || bgt || ble)? Compare_s :
-                         (mult)? Mult_s :
-                         (div)? Div_s :
-                         (slti || addi || addiu || add || _and || sub || slt)? ALUop_s :
-                         (jr)? ALUjToPC_s :
-                         (sll || srl || sra)? ShiftImd_s :
-                         (sllv || srav)? ShiftReg_s :
-                         (lw || lh || lb || sw || sh || sb)? MemAdd_s :
-                         (j)? Jump_s :
-                         (jal)? JandSave_s :
-                         PCtoEPC_s;
-            end
-            ALUopSP_s: begin
-                state <= SPwrite_s;
-            end
-            SPwrite_s: begin
-                state <= (push)? SPtoMem_s : PCread_s;
-            end
-            SPtoMem_s: begin
-                state <= MemWrite_s;
-            end
-            MemAdd_s: begin
-                state <= (sw)? MemWrite_s : MemRead_s;
-            end 
-            MemRead_s: begin
-                state <= MemWait_s;
-                next_state = (lw || pop)? MemToReg_s : BHsel_s;
-            end
-            MemWrite_s: begin
-                state <= PCread_s;
-            end 
-            BHsel_s: begin
-                state <= (sh || sb)? MemWrite_s : MemToReg_s;
-            end
-            MemToReg_s: begin
-                state <= (pop)? ALUopSP_s : PCread_s;
-            end 
-            Jump_s: begin
-                state <= PCread_s;
-            end
-            StorePC_s: begin
-                state <= JandSave_s;
-            end
-            JandSave_s: begin
-                state <= PCread_s;
-            end
-            PCtoEPC_s: begin
-                state <= RoutineC_s;
-            end
-            RoutineC_s: begin
-                state <= GoToRout_s;
-            end
-            GoToRout_s: begin
-                state <= MemWait_s;
-                next_state = RoutToPC_s;
-            end
-            RoutToPC_s: begin
-                state <= PCread_s;
-            end
-            LoadImd_s: begin
-                state <= PCread_s;
-            end
-            EPCtoPC_s: begin
-                state <= PCread_s;
-            end
-            LoadLO_s: begin
-                state <= PCread_s;
-            end 
-            LoadHI_s: begin
-                state <= PCread_s;
-            end 
-            Compare_s: begin
-                state <= (bne)? ((ET)? PCread_s : ALUtoPC_s) :
-                         (beq)? ((ET)? ALUtoPC_s : PCread_s) :
-                         (bgt)? ((GT)? ALUtoPC_s : PCread_s) :
-                         (ble)? ((LT)? ALUtoPC_s : PCread_s) :
-                         6'bx;
-            end
-            ALUtoPC_s: begin
-                state <= PCread_s;
-            end
-            ShiftReg_s: begin
-                state <= ShiftOp_s;
-            end 
-            ShiftImd_s: begin
-                state <= ShiftOp_s;
-            end 
-            ShiftOp_s: begin
-                state <= ShiftToReg_s;
-            end
-            ShiftToReg_s: begin
-                state <= PCread_s;
-            end
-            ALUjToPC_s: begin
-                state <= PCread_s;
-            end 
-            ALUop_s: begin
-                state <= ALUtoReg_s;
-            end
-            ALUtoReg_s: begin
-                state <= PCread_s;
-            end 
-            Div_s: begin
-                state <= (Div0)? PCtoEPC_s : ((counter == 6'd32)? WriteHILO_s : Div_s);
-                counter = (Div0)? 6'd0 : counter + 1;
-            end
-            Mult_s: begin
-                state <= (counter == 6'd32)? WriteHILO_s : Mult_s;
-                counter = counter + 1;
-            end
-            WriteHILO_s: begin
-                counter = 6'd0;
-                state <= PCread_s;
-            end
-            default: state <= BREAK_s;
-        endcase
     end
 
     // outputs selection
-    /*always @(posedge clock, negedge RESET_in) begin
+    /*always @(state) begin
         case (state)
             RESET_s: begin
                 
