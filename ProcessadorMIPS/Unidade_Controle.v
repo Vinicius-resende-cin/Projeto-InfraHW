@@ -3,7 +3,7 @@ module Unidade_Controle (
     input [5:0] opcode, funct, // instruction inputs
     input GT, LT, ET, O, N, ZERO,// ALU inputs
     input Div0, // division/0
-    output reg RESET_out, BREAK, PCwrite, MemRead, MemWrite, IRwrite, RegWrite, MultOp, DivOp, EPCwrite, // 1 bit action signals
+    output reg RESET_out, BREAK, PCwrite, MemWR, IRwrite, RegWrite, MultOp, DivOp, EPCwrite, // 1 bit action signals
     output reg IorD, BHsel, RegSrc, ALUsrcA, ShamtSrc, ShiftData, ALUtoReg, MorDHI, MorDLO, // 1 bit MUX signals
     output reg [1:0] MemData, RegDst, ALUsrcB, // 2 bit MUX signals
     output reg [2:0] ALUop, ShiftOp, // 3 bit action signals
@@ -111,8 +111,7 @@ module Unidade_Controle (
         RESET_out = 1'b0;
         BREAK = 1'b0;
         PCwrite = 1'b0;
-        MemRead = 1'b0;
-        MemWrite = 1'b0;
+        MemWR = 1'b0;
         IRwrite = 1'b0;
         RegWrite = 1'b0;
         MultOp = 1'b0;
@@ -305,8 +304,7 @@ module Unidade_Controle (
         // reset action signals
         RESET_out = 1'b0;
         PCwrite = 1'b0;
-        MemRead = 1'b0;
-        MemWrite = 1'b0;
+        MemWR = 1'b0;
         IRwrite = 1'b0;
         RegWrite = 1'b0;
         MultOp = 1'b0;
@@ -332,10 +330,10 @@ module Unidade_Controle (
                 ALUop = 3'b001;
                 PCsrc = 3'b000;
                 IorD = 1'b0;
-                MemRead = 1'b1;
+                MemWR = 1'b0;
             end
             MemWait_s: begin
-                MemRead = 1'b0;
+                MemWR = 1'b0;
             end
             InstDecSP_s: begin
                 RegSrc = 1'b0;
@@ -375,11 +373,11 @@ module Unidade_Controle (
                 IorD = 1'b1;
             end 
             MemRead_s: begin
-                MemRead = 1'b1;
+                MemWR = 1'b0;
             end
             MemWrite_s: begin
                 MemData = (push || sw)? 2'b00 : ((sh)? 2'b01 : 2'b10);
-                MemWrite = 1'b1;
+                MemWR = 1'b1;
             end 
             BHsel_s: begin
                 BHsel = (sh || sb)? 1'b0 : 1'b1;
@@ -417,7 +415,7 @@ module Unidade_Controle (
             end
             GoToRout_s: begin
                 IorD = 1'b0;
-                MemRead = 1'b1;
+                MemWR = 1'b0;
             end
             RoutToPC_s: begin
                 BHsel = 1'b0;
