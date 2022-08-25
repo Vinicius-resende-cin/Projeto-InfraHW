@@ -3,12 +3,12 @@ module Unidade_Controle (
     input [5:0] opcode, funct, // instruction inputs
     input GT, LT, ET, O, N, ZERO,// ALU inputs
     input Div0, // division/0
-    output RESET_out, BREAK, PCwrite, MemRead, MemWrite, IRwrite, RegWrite, MultOp, DivOp, EPCwrite, // 1 bit action signals
-    output IorD, BHsel, RegSrc, ALUsrcA, ShamtSrc, ShiftData, ALUtoReg, MorDHI, MorDLO, // 1 bit MUX signals
-    output [1:0] MemData, RedDst, ALUsrcB, // 2 bit MUX signals
-    output [2:0] ALUop, ShiftOp, // 3 bit action signals
-    output [2:0] PCsrc, // 3 bit MUX signals
-    output [3:0] RegData // 4 bit MUX signal
+    output reg RESET_out, BREAK, PCwrite, MemRead, MemWrite, IRwrite, RegWrite, MultOp, DivOp, EPCwrite, // 1 bit action signals
+    output reg IorD, BHsel, RegSrc, ALUsrcA, ShamtSrc, ShiftData, ALUtoReg, MorDHI, MorDLO, // 1 bit MUX signals
+    output reg [1:0] MemData, RegDst, ALUsrcB, // 2 bit MUX signals
+    output reg [2:0] ALUop, ShiftOp, // 3 bit action signals
+    output reg [2:0] PCsrc, // 3 bit MUX signals
+    output reg [3:0] RegData // 4 bit MUX signal
 );
 
     // internal registers
@@ -103,6 +103,47 @@ module Unidade_Controle (
     initial begin
         state = RESET_s;
         counter = 6'd0;
+    end
+
+    // initial outputs
+    initial begin
+        // 1 bit action signals
+        RESET_out = 1'b0;
+        BREAK = 1'b0;
+        PCwrite = 1'b0;
+        MemRead = 1'b0;
+        MemWrite = 1'b0;
+        IRwrite = 1'b0;
+        RegWrite = 1'b0;
+        MultOp = 1'b0;
+        DivOp = 1'b0;
+        EPCwrite = 1'b0;
+
+        // 1 bit MUX signals
+        IorD = 1'b0;
+        BHsel = 1'b0;
+        RegSrc = 1'b0;
+        ALUsrcA = 1'b0;
+        ShamtSrc = 1'b0;
+        ShiftData = 1'b0;
+        ALUtoReg = 1'b0;
+        MorDHI = 1'b0;
+        MorDLO = 1'b0;
+        
+        // 2 bit MUX signals
+        MemData = 2'b00;
+        RegDst = 2'b00;
+        ALUsrcB = 2'b00;
+
+        // 3 bit action signals
+        ALUop = 3'b000;
+        ShiftOp = 3'b000;
+
+        // 3 bit MUX signal
+        PCsrc = 3'b000;
+
+        // 4 bit mux signal
+        RegData = 4'b0000;
     end
 
     // state selection
@@ -260,123 +301,206 @@ module Unidade_Controle (
     end
 
     // outputs selection
-    /*always @(state) begin
+    always @(state) begin
+        // reset action signals
+        RESET_out = 1'b0;
+        PCwrite = 1'b0;
+        MemRead = 1'b0;
+        MemWrite = 1'b0;
+        IRwrite = 1'b0;
+        RegWrite = 1'b0;
+        MultOp = 1'b0;
+        DivOp = 1'b0;
+        EPCwrite = 1'b0;
+        BREAK = 1'b0;
+
         case (state)
             RESET_s: begin
-                
+                RESET_out = 1'b1;
             end
             RESETsp_s: begin
-                
+                RegData = 4'b0000;
+                RegDst = 2'b10;
+                RegWrite = 1;
             end
             BREAK_s: begin
-                
+                BREAK = 1'b1;
             end
             PCread_s: begin
-                
+                ALUsrcA = 1'b0;
+                ALUsrcB = 2'b01;
+                ALUop = 3'b001;
+                PCsrc = 3'b000;
+                IorD = 1'b0;
+                MemRead = 1'b1;
             end
             MemWait_s: begin
-                
+                MemRead = 1'b0;
             end
             InstDecSP_s: begin
-                
+                RegSrc = 1'b0;
+                ALUsrcA = 1'b0;
+                ALUsrcB = 2'b11;
+                ALUop = 3'b001;
+                ALUtoReg = 1'b0;
             end
             InstDec_s: begin
-                
+                RegSrc = 1'b1;
+                ALUsrcA = 1'b0;
+                ALUsrcB = 2'b11;
+                ALUop = 3'b001;
+                ALUtoReg = 1'b0;
             end
             ALUopSP_s: begin
-                
+                ALUsrcA = 1'b1;
+                ALUsrcB = 2'b01;
+                ALUop = 3'b010;
+                ALUtoReg = 1'b0;
             end
             SPwrite_s: begin
-                
+                RegData = 4'b0010;
+                RegDst = 2'b10;
+                RegWrite = 1'b1;
             end
             SPtoMem_s: begin
-                
+                ALUsrcA = 1'b1;
+                ALUop = 3'b000;
+                ALUtoReg = 1'b0;
+                IorD = 1'b1;
             end
             MemAdd_s: begin
-                
+                ALUsrcA = 1'b1;
+                ALUop = 3'b000;
+                ALUtoReg = 1'b0;
+                IorD = 1'b1;
             end 
             MemRead_s: begin
-                
+                MemRead = 1'b1;
             end
             MemWrite_s: begin
-                
+                MemData = (push || sw)? 2'b00 : ((sh)? 2'b01 : 2'b10);
+                MemWrite = 1'b1;
             end 
             BHsel_s: begin
-                
+                BHsel = (sh || sb)? 1'b0 : 1'b1;
             end
             MemToReg_s: begin
-                
+                RegData = (lw || pop)? 4'b0001 : ((lh)? 4'b0110 : 4'b0111);
+                RegDst = 2'b00;
+                RegWrite = 1'b1; 
             end 
             Jump_s: begin
-                
+                PCsrc = 3'b010;
+                PCwrite = 1'b1;
             end
             StorePC_s: begin
-                
+                ALUsrcA = 1'b0;
+                ALUop = 3'b000;
+                ALUtoReg = 1'b0;
             end
             JandSave_s: begin
-                
+                PCsrc = 3'b010;
+                PCwrite = 1'b1;
+                RegData = 4'b0010;
+                RegDst = 2'b11;
+                RegWrite = 1'b1;
             end
             PCtoEPC_s: begin
-                
+                ALUsrcA = 1'b0;
+                ALUsrcB = 2'b01;
+                ALUop = 3'b010;
+                EPCwrite = 1'b1;
             end
             RoutineC_s: begin
-                
+                PCsrc = (div && Div0)? 3'b111 : ((O)? 3'b110 : 3'b101);
+                PCwrite = 1'b1; 
             end
             GoToRout_s: begin
-                
+                IorD = 1'b0;
+                MemRead = 1'b1;
             end
             RoutToPC_s: begin
-                
+                BHsel = 1'b0;
+                PCsrc = 3'b100;
+                PCwrite = 1'b1;
             end
             LoadImd_s: begin
-                
+                RegData = 4'b1000;
+                RegDst = 2'b00;
+                RegWrite = 1'b1;
             end
             EPCtoPC_s: begin
-                
+                PCsrc = 3'b011;
+                PCwrite = 1'b1;
             end
             LoadLO_s: begin
-                
+                RegData = 4'b0100;
+                RegDst = 2'b01;
+                RegWrite = 1'b1;
             end 
             LoadHI_s: begin
-                
+                RegData = 4'b0011;
+                RegDst = 2'b01;
+                RegWrite = 1'b1;
             end 
             Compare_s: begin
-                
+                ALUsrcA = 1'b1;
+                ALUsrcB = 2'b00;
+                ALUop = 3'b111;
             end
             ALUtoPC_s: begin
-                
+                PCsrc = 3'b001;
+                PCwrite = 1'b1;
             end
             ShiftReg_s: begin
-                
+                ShiftData = 1'b0;
+                ShamtSrc = 1'b1;
+                ShiftOp = 001;
             end 
             ShiftImd_s: begin
-                
+                ShiftData = 1'b1;
+                ShamtSrc = 1'b0;
+                ShiftOp = 001;
             end 
             ShiftOp_s: begin
-                
+                ShiftOp = (sll || sllv)? 3'b010 : ((srl)? 3'b011 : 3'b100);
             end
             ShiftToReg_s: begin
-                
+                RegData = 4'b0101;
+                RegDst = 2'b01;
+                RegWrite = 1'b1;
             end
             ALUjToPC_s: begin
-                
+                ALUsrcA = 1'b1;
+                ALUsrcB = 2'b00;
+                ALUop = 3'b000;
+                PCsrc = 3'b000;
+                PCwrite = 1'b1;
             end 
             ALUop_s: begin
-                
+                ALUsrcA = 1'b1;
+                ALUsrcB = (addi || addiu || slti)? 2'b10 : 2'b00;
+                ALUop = (add || addi || addiu)? 3'b001 :
+                        (sub)? 3'b010 :
+                        (slt || slti)? 3'b111 :
+                        3'b011;
+                ALUtoReg = (slt || slti)? 1'b1 : 1'b0;
             end
             ALUtoReg_s: begin
-                
+                RegData = 4'b0010;
+                RegDst = 2'b01;
+                RegWrite = 1'b1;
             end 
             Div_s: begin
-                
+                DivOp = 1'b1;
             end
             Mult_s: begin
-                
+                MultOp = 1'b1;
             end
             WriteHILO_s: begin
-                
+                MorDHI = (mult)? 1'b0 : 1'b1;
+                MorDLO = (mult)? 1'b0 : 1'b1;
             end
-            default: 
         endcase
-    end*/
+    end
 endmodule
