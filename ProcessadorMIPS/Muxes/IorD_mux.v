@@ -6,5 +6,5 @@ module IorD_mux (
     
     output wire [31:0] out
 );
-    assign out = (control) ? in_0 : in_1;
+    assign out = (control) ? in_1 : in_0;
 endmodule
