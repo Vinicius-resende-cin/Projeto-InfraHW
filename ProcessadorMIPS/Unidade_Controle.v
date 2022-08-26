@@ -347,7 +347,7 @@ module Unidade_Controle (
             MemWait_s: begin
                 MemWR = 1'b0;
             end
-            InstWrite_s begin
+            InstWrite_s: begin
                 IRwrite = 1'b1;
                 PCwrite = 1'b1;
             end
