@@ -3,7 +3,7 @@ module Unidade_Controle (
     input [5:0] opcode, funct, // instruction inputs
     input GT, LT, ET, O, N, ZERO,// ALU inputs
     input Div0, // division/0
-    output reg RESET_out, BREAK, PCwrite, MemWR, IRwrite, RegWrite, MultOp, DivOp, EPCwrite, // 1 bit action signals
+    output reg RESET_out, BREAK, PCwrite, MemWR, IRwrite, RegWrite, MultOp, DivOp, EPCwrite, ALUoutW, AW, BW, HIW, LOW, MemDataW, // 1 bit action signals
     output reg IorD, BHsel, RegSrc, ALUsrcA, ShamtSrc, ShiftData, ALUtoReg, MorDHI, MorDLO, // 1 bit MUX signals
     output reg [1:0] MemData, RegDst, ALUsrcB, // 2 bit MUX signals
     output reg [2:0] ALUop, ShiftOp, // 3 bit action signals
@@ -117,6 +117,12 @@ module Unidade_Controle (
         MultOp = 1'b0;
         DivOp = 1'b0;
         EPCwrite = 1'b0;
+        ALUoutW = 1'b0;
+        AW = 1'b0;
+        BW = 1'b0;
+        HIW = 1'b0;
+        LOW = 1'b0;
+        MemDataW = 1'b0;
 
         // 1 bit MUX signals
         IorD = 1'b0;
@@ -202,11 +208,11 @@ module Unidade_Controle (
                     state <= MemWrite_s;
                 end
                 MemAdd_s: begin
-                    state <= (sw)? MemWrite_s : MemRead_s;
+                    state <= (sw)? MemWrite_s : MemWait_s;
+                    next_state = MemRead_s;
                 end 
                 MemRead_s: begin
-                    state <= MemWait_s;
-                    next_state = (lw || pop)? MemToReg_s : BHsel_s;
+                    state <= (lw || pop)? MemToReg_s : BHsel_s;
                 end
                 MemWrite_s: begin
                     state <= PCread_s;
@@ -310,6 +316,12 @@ module Unidade_Controle (
         MultOp = 1'b0;
         DivOp = 1'b0;
         EPCwrite = 1'b0;
+        ALUoutW = 1'b0;
+        AW = 1'b0;
+        BW = 1'b0;
+        HIW = 1'b0;
+        LOW = 1'b0;
+        MemDataW = 1'b0;
         BREAK = 1'b0;
 
         case (state)
@@ -335,25 +347,36 @@ module Unidade_Controle (
             MemWait_s: begin
                 MemWR = 1'b0;
             end
+            InstWrite_s begin
+                IRwrite = 1'b1;
+                PCwrite = 1'b1;
+            end
             InstDecSP_s: begin
                 RegSrc = 1'b0;
+                AW = 1'b1;
+                BW = 1'b1;
                 ALUsrcA = 1'b0;
                 ALUsrcB = 2'b11;
                 ALUop = 3'b001;
                 ALUtoReg = 1'b0;
+                ALUoutW = 1'b1;
             end
             InstDec_s: begin
                 RegSrc = 1'b1;
+                AW = 1'b1;
+                BW = 1'b1;
                 ALUsrcA = 1'b0;
                 ALUsrcB = 2'b11;
                 ALUop = 3'b001;
                 ALUtoReg = 1'b0;
+                ALUoutW = 1'b1;
             end
             ALUopSP_s: begin
                 ALUsrcA = 1'b1;
                 ALUsrcB = 2'b01;
                 ALUop = 3'b010;
                 ALUtoReg = 1'b0;
+                ALUoutW = 1'b1;
             end
             SPwrite_s: begin
                 RegData = 4'b0010;
@@ -364,16 +387,19 @@ module Unidade_Controle (
                 ALUsrcA = 1'b1;
                 ALUop = 3'b000;
                 ALUtoReg = 1'b0;
+                ALUoutW = 1'b1;
                 IorD = 1'b1;
             end
             MemAdd_s: begin
                 ALUsrcA = 1'b1;
                 ALUop = 3'b000;
                 ALUtoReg = 1'b0;
+                ALUoutW = 1'b1;
                 IorD = 1'b1;
+                MemWR = 1'b0;
             end 
             MemRead_s: begin
-                MemWR = 1'b0;
+                MemDataW = 1'b1;
             end
             MemWrite_s: begin
                 MemData = (push || sw)? 2'b00 : ((sh)? 2'b01 : 2'b10);
@@ -395,6 +421,7 @@ module Unidade_Controle (
                 ALUsrcA = 1'b0;
                 ALUop = 3'b000;
                 ALUtoReg = 1'b0;
+                ALUoutW = 1'b1;
             end
             JandSave_s: begin
                 PCsrc = 3'b010;
@@ -483,6 +510,7 @@ module Unidade_Controle (
                         (slt || slti)? 3'b111 :
                         3'b011;
                 ALUtoReg = (slt || slti)? 1'b1 : 1'b0;
+                ALUoutW = 1'b1;
             end
             ALUtoReg_s: begin
                 RegData = 4'b0010;
@@ -498,6 +526,8 @@ module Unidade_Controle (
             WriteHILO_s: begin
                 MorDHI = (mult)? 1'b0 : 1'b1;
                 MorDLO = (mult)? 1'b0 : 1'b1;
+                HIW = 1'b1;
+                LOW = 1'b1;
             end
         endcase
     end
