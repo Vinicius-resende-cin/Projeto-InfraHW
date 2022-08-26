@@ -55,7 +55,8 @@ module Unidade_Controle (
                     ALUtoReg_s = 6'd35, // write ALU result in register
                     Div_s = 6'd36, // division
                     Mult_s = 6'd37, // multiplication
-                    WriteHILO_s = 6'd38; // write in HI/LO registers
+                    WriteHILO_s = 6'd38, // write in HI/LO registers
+                    MemDataW_s = 6'd39; // write in mem data register
 
     // intruction definition
     reg j, jal, beq, bne, ble, bgt, addi, addiu, slti, lui, lb, lh, lw, sb, sh, sw, sll, srl, sra, sllv,
@@ -208,10 +209,13 @@ module Unidade_Controle (
                     state <= MemWrite_s;
                 end
                 MemAdd_s: begin
-                    state <= (sw)? MemWrite_s : MemWait_s;
-                    next_state = MemRead_s;
+                    state <= (sw)? MemWrite_s : MemRead_s;
                 end 
                 MemRead_s: begin
+                    state <= MemWait_s;
+                    next_state <= MemDataW_s;
+                end
+                MemDataW_s: begin
                     state <= (lw || pop)? MemToReg_s : BHsel_s;
                 end
                 MemWrite_s: begin
@@ -392,13 +396,16 @@ module Unidade_Controle (
             end
             MemAdd_s: begin
                 ALUsrcA = 1'b1;
-                ALUop = 3'b000;
+                ALUsrcB = 2'b10;
+                ALUop = 3'b001;
                 ALUtoReg = 1'b0;
                 ALUoutW = 1'b1;
                 IorD = 1'b1;
-                MemWR = 1'b0;
             end 
             MemRead_s: begin
+                MemWR = 1'b0;
+            end
+            MemDataW_s: begin
                 MemDataW = 1'b1;
             end
             MemWrite_s: begin
