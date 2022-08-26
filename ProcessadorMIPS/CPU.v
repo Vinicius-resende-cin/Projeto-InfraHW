@@ -1,11 +1,6 @@
-`include "Memoria.vhd"
-`include "Instr_Reg.vhd"
-`include "Banco_reg.vhd"
-`include "Registrador.vhd"
-`include "ula32.vhd"
 `include "Muxes/ALUSrcA_mux.v"
 `include "Muxes/ALUSrcB_mux.v"
-`include "Muxes/Iord_mux.v"
+`include "Muxes/IorD_mux.v"
 `include "Muxes/RegSrc_mux.v"
 `include "Muxes/RegDst_mux.v"
 `include "Muxes/RegData_mux.v"
@@ -21,14 +16,14 @@ module CPU (
 wire reset;
 
 wire PC_write;
-wire PC_in;
-wire PC_out;
+wire [31:0] PC_in;
+wire [31:0] PC_out;
 
 wire Iord_control;
-wire Iord_out;
+wire [31:0] Iord_out;
 
-wire ALU_op;
-wire ALU_result;
+wire [2:0] ALU_op;
+wire [31:0] ALU_result;
 wire ALU_of;
 wire ALU_neg;
 wire ALU_z;
@@ -37,74 +32,72 @@ wire ALU_gt;
 wire ALU_lt;
 
 wire ALUout_write;
-wire Alu_Out;
+wire [31:0] Alu_Out;
 
 wire Mem_write;
-wire Data_in ;
-wire Data_out;
+wire [31:0] Data_in;
+wire [31:0] Data_out;
 
 wire Load_ir;
-wire Instr31_26;
-wire Instr25_21;
-wire Instr20_16;
-wire Instr15_0;
+wire [5:0] Instr31_26;
+wire [4:0] Instr25_21;
+wire [4:0] Instr20_16;
+wire [15:0] Instr15_0;
 
 wire RegSrc_control;
-wire RegSrc_out;
+wire [4:0] RegSrc_out;
 
-wire RegDst_control;
-wire RegDst_out;
+wire [1:0] RegDst_control;
+wire [4:0] RegDst_out;
 
-wire RegData_control;
-wire MemData;
-wire HI;
-wire LO ;
-wire ShiftReg ;
-wire Half;
-wire Byte;
-wire Immediate;
-wire RegData_out;
+wire [3:0] RegData_control;
+wire [31:0] MemData;
+wire [31:0] HI;
+wire [31:0] LO ;
+wire [31:0] ShiftReg ;
+wire [31:0] Half;
+wire [31:0] Byte;
+wire [31:0] Immediate;
+wire [31:0] RegData_out;
 
 wire Reg_write;
-wire ReadData_1;
-wire ReadData_2;
+wire [31:0] ReadData_1;
+wire [31:0] ReadData_2;
 
 wire RegA_write;
-wire ReadData_1;
-wire RegA_out;
+wire [31:0] RegA_out;
 
 wire RegB_write;
-wire ReadData_2;
-wire RegB_out;
+wire [31:0] RegB_out;
 
 wire ALUSrcA_control;
-wire ALUSrcA_out;
+wire [31:0] ALUSrcA_out;
 
-wire ALUSrcB_control;
-wire SignExt;
-wire ShiftLeft_2;
-wire ALUSrcB_out;
+wire [1:0] ALUSrcB_control;
+wire [31:0] SignExt;
+wire [31:0] ShiftLeft_2;
+wire [31:0] ALUSrcB_out;
 
 wire AluToReg_control;
-wire Flag;
-wire AluToReg_out;
+wire [31:0] Flag;
+wire [31:0] AluToReg_out;
 
-wire PCSource_control;
-wire InstrunctionToPCSource;
-wire Instr250_sl; // Igor vai mandar o shift left depois
+wire [2:0] PCSource_control;
+wire [31:0] InstrunctionToPCSource;
+wire [25:0] Instr250_sl; // Igor vai mandar o shift left depois
 assign InstrunctionToPCSource = {PC_out[31:28], Instr250_sl};
-wire EPC;
-wire Exception;
-wire PCSource_out;
+wire [31:0] EPC;
+wire [31:0] Exception;
+wire [31:0] PCSource_out;
 
-wire temp;
+wire [31:0] temp;
 
 Registrador PC(clk, reset, PC_write, PC_in, PC_out);
-Iord_mux Iord(Iord_control, PC_out, AluOut, Iord_out);
+IorD_mux Iord(Iord_control, PC_out, Alu_Out, Iord_out);
 Memoria Mem(Iord_out, clk, Mem_write, Data_in, Data_out);
 Instr_Reg Inst_reg(clk, reset, Load_ir, Data_out, Instr31_26, Instr25_21, Instr20_16, Instr15_0);
 RegSrc_mux RedSrc(RegSrc_control, Instr25_21, RegSrc_out);
-RegDst_mux RegDst(RegDst_control, Instr20_16, Instr15_0, RegDst_out);
+RegDst_mux RegDst(RegDst_control, Instr20_16, Instr15_0[15:11], RegDst_out);
 RegData_mux RegData(RegData_control, MemData, Alu_Out, HI, LO, ShiftReg, Half, Byte, Immediate, RegData_out);
 Banco_reg Reg_bank(clk, reset, Reg_write, RegSrc_out, Instr20_16, RegDst_out, RegData_out, ReadData_1, ReadData_2);
 Registrador A(clk, reset, RegA_write, ReadData_1, RegA_out);
