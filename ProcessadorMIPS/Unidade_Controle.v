@@ -4,7 +4,7 @@ module Unidade_Controle (
     input GT, LT, ET, O, N, ZERO,// ALU inputs
     input Div0, // division/0
     output reg RESET_out, BREAK, PCwrite, MemWR, IRwrite, RegWrite, MultOp, DivOp, EPCwrite, ALUoutW, AW, BW, HIW, LOW, MemDataW, // 1 bit action signals
-    output reg IorD, BHsel, RegSrc, ALUsrcA, ShamtSrc, ShiftData, ALUtoReg, MorDHI, MorDLO, // 1 bit MUX signals
+    output reg IorD, RegSrc, ALUsrcA, ShamtSrc, ShiftData, ALUtoReg, MorDHI, MorDLO, // 1 bit MUX signals
     output reg [1:0] MemData, RegDst, ALUsrcB, // 2 bit MUX signals
     output reg [2:0] ALUop, ShiftOp, // 3 bit action signals
     output reg [2:0] PCsrc, // 3 bit MUX signals
@@ -31,7 +31,6 @@ module Unidade_Controle (
                     MemAdd_s = 6'd11, // memory address computation
                     MemRead_s = 6'd12, // read memory to memory data register
                     MemWrite_s = 6'd13, // write memory
-                    BHsel_s = 6'd14, // select byte/half
                     MemToReg_s = 6'd15, // write register from memory
                     Jump_s = 6'd16, // load jump address in PC
                     StorePC_s = 6'd17, // store pc+4 address in ALUout register
@@ -127,7 +126,6 @@ module Unidade_Controle (
 
         // 1 bit MUX signals
         IorD = 1'b0;
-        BHsel = 1'b0;
         RegSrc = 1'b0;
         ALUsrcA = 1'b0;
         ShamtSrc = 1'b0;
@@ -216,13 +214,10 @@ module Unidade_Controle (
                     next_state <= MemDataW_s;
                 end
                 MemDataW_s: begin
-                    state <= (lw || pop)? MemToReg_s : BHsel_s;
+                    state <= (lw || lh || lb || pop)? MemToReg_s : MemWrite_s;
                 end
                 MemWrite_s: begin
                     state <= PCread_s;
-                end 
-                BHsel_s: begin
-                    state <= (sh || sb)? MemWrite_s : MemToReg_s;
                 end
                 MemToReg_s: begin
                     state <= (pop)? ALUopSP_s : PCread_s;
@@ -411,9 +406,6 @@ module Unidade_Controle (
             MemWrite_s: begin
                 MemData = (push || sw)? 2'b00 : ((sh)? 2'b01 : 2'b10);
                 MemWR = 1'b1;
-            end 
-            BHsel_s: begin
-                BHsel = (sh || sb)? 1'b0 : 1'b1;
             end
             MemToReg_s: begin
                 RegData = (lw || pop)? 4'b0001 : ((lh)? 4'b0110 : 4'b0111);
@@ -452,7 +444,6 @@ module Unidade_Controle (
                 MemWR = 1'b0;
             end
             RoutToPC_s: begin
-                BHsel = 1'b0;
                 PCsrc = 3'b100;
                 PCwrite = 1'b1;
             end

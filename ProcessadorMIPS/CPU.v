@@ -109,7 +109,7 @@ AluToReg_mux AluToReg(AluToReg_control, ALU_result, Flag, AluToReg_out);
 Registrador ALUout(clk, reset, ALUout_write, AluToReg_out, Alu_Out);
 PCSource_mux PCSource(PCSource_control, ALU_result, Alu_Out, InstrunctionToPCSource, EPC, Exception, PCSource_out);
 Unidade_Controle UnidadeControle(clk, reset_in, Instr31_26, Instr15_0[5:0], ALU_gt, ALU_lt, ALU_eq, ALU_of, ALU_neg, ALU_z,
- temp, reset, temp, PC_write, Mem_write, Load_ir, Reg_write, temp, temp, temp, ALUout_write, RegA_write, RegB_write, temp, temp, temp, Iord_control, temp, RegSrc_control, ALUSrcA_control, temp, temp, AluToReg_control, temp, 
+ temp, reset, temp, PC_write, Mem_write, Load_ir, Reg_write, temp, temp, temp, ALUout_write, RegA_write, RegB_write, temp, temp, temp, Iord_control, RegSrc_control, ALUSrcA_control, temp, temp, AluToReg_control, temp, 
  temp, temp, RegDst_control, ALUSrcB_control, ALU_op, temp, PCSource_control, RegData_control);
 
 endmodule
