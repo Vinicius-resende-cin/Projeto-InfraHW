@@ -30,4 +30,4 @@ Implementação em verilog de um processador multiciclo baseado na arquitetura M
 
 ## Sinais
 
-![image](https://user-images.githubusercontent.com/92769975/186793328-cc952e43-5481-484b-afc7-792e60c69a1e.png)
+![image](https://user-images.githubusercontent.com/92769975/187044227-c2bbad42-8d1c-4d30-ac63-8a206f5cf955.png)
