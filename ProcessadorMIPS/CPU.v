@@ -9,13 +9,11 @@
 `include "Muxes/MemData_mux.v"
 `include "Muxes/ShamtSrc_mux.v"
 `include "Muxes/ShiftData_mux.v"
-`include "ltExt_1to32.v"
-`include "luiExt_16to32.v"
-`include "ShiftLeft_26to28.v"
-`include "ShiftLeft2.v"
-`include "SignExt_8to32"
-`include "SignExt_16to32"
-`include "ZeroExt_8to32"
+`include "ExtendsAndShifts/ltExt_1to32.v"
+`include "ExtendsAndShifts/luiExt_16to32.v"
+`include "ExtendsAndShifts/ShiftLeft_26to28.v"
+`include "ExtendsAndShifts/ShiftLeft2.v"
+`include "ExtendsAndShifts/SignExt_16to32.v"
 `include "Unidade_Controle.v"
 `include "BHmanagement.v"
 
@@ -27,7 +25,6 @@ module CPU (
 wire reset;
 
 wire PC_write;
-wire [31:0] PC_in;
 wire [31:0] PC_out;
 
 wire Iord_control;
@@ -114,7 +111,7 @@ wire [31:0] Byte32U;
 wire [31:0] temp;
 
 
-Registrador PC(clk, reset, PC_write, PC_in, PC_out);
+Registrador PC(clk, reset, PC_write, PCSource_out, PC_out);
 IorD_mux Iord(Iord_control, PC_out, Alu_Out, Iord_out);
 Memoria Mem(Iord_out, clk, Mem_write, Data_in, Data_out);
 Instr_Reg Inst_reg(clk, reset, Load_ir, Data_out, Instr31_26, Instr25_21, Instr20_16, Instr15_0);
@@ -140,7 +137,7 @@ SignExt_16to32 signExt_16to32(Instr15_0, SignExt);
 ShiftLeft2 shiftLeft2(SignExt, ShiftLeft_2);
 luiExt_16to32 Lui(Instr15_0, Immediate);
 BHmanagement bhManagement(MemData_out, MemDataMSB, MemDataLSB, Half32, Byte32, Byte32U);
-MemData_mux MemData(MemData_control, RegB_out, {MemDataMSB, RegB_out[15:0]}, {MemDataMSB, MemDataLSB[15:8], RegB_out[7:0]});
+MemData_mux MemData(MemData_control, RegB_out, {MemDataMSB, RegB_out[15:0]}, {MemDataMSB, MemDataLSB[15:8], RegB_out[7:0]}, Data_in);
 ShiftLeft_26to28 shiftLeft_26to28({Instr25_21, Instr20_16, Instr15_0}, Instr250_sl);
 ltExt_1to32 lt_ext_1to32(ALU_lt, Flag);
 

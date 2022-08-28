@@ -512,7 +512,7 @@ module Unidade_Controle (
             end
             ALUtoReg_s: begin
                 RegData = 4'b0010;
-                RegDst = 2'b01;
+                RegDst = (addi || addiu || slti)? 2'b00 : 2'b01;
                 RegWrite = 1'b1;
             end 
             Div_s: begin
