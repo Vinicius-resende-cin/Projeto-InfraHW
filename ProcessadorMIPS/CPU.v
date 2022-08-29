@@ -44,6 +44,7 @@ wire ALU_lt;
 wire ALUout_write;
 wire [31:0] Alu_Out;
 
+wire [1:0] MemData_control;
 wire Mem_write;
 wire [31:0] Data_in;
 wire [31:0] Data_out;
@@ -63,7 +64,7 @@ wire [4:0] RegDst_out;
 wire [3:0] RegData_control;
 wire [31:0] MemData_out;
 wire [31:0] HI;
-wire [31:0] LO ;
+wire [31:0] LO;
 wire [31:0] ShiftReg_out ;
 wire [31:0] Immediate;
 wire [31:0] RegData_out;
@@ -117,6 +118,9 @@ wire[31:0] Mult_Lo;
 wire [31:0] Div_Hi;
 wire [31:0] Div_Lo;
 
+wire [31:0] MorDHi_out;
+wire [31:0] MorDLo_out;
+
 wire [31:0] temp;
 
 
@@ -139,7 +143,7 @@ PCSource_mux PCSource(PCSource_control, ALU_result, Alu_Out, InstrunctionToPCSou
 
 Registrador RegMemData(clk, reset, MemData_write, Data_out, MemData_out);
 ShiftData_mux ShiftData(ShiftData_control, RegA_out, RegB_out, ShiftData_out);
-ShamtSrc_mux ShamtSrc(ShamtSrc_control, Instr15_0, RegB_out[4:0], ShamtSrc_out);
+ShamtSrc_mux ShamtSrc(ShamtSrc_control, Instr15_0[10:6], RegB_out[4:0], ShamtSrc_out);
 RegDesloc ShiftReg(clk, reset, Shift_op, ShamtSrc_out, ShiftData_out, ShiftReg_out);
 Registrador EPC(clk, reset, EPC_write, ALU_result, EPC_out);
 SignExt_16to32 signExt_16to32(Instr15_0, SignExt);
