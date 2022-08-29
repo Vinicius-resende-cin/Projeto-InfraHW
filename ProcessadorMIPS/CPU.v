@@ -9,6 +9,8 @@
 `include "Muxes/MemData_mux.v"
 `include "Muxes/ShamtSrc_mux.v"
 `include "Muxes/ShiftData_mux.v"
+`include "Muxes/MorDHi_mux.v"
+`include "Muxes/MorDLo_mux.v"
 `include "ExtendsAndShifts/ltExt_1to32.v"
 `include "ExtendsAndShifts/luiExt_16to32.v"
 `include "ExtendsAndShifts/ShiftLeft_26to28.v"
@@ -16,6 +18,7 @@
 `include "ExtendsAndShifts/SignExt_16to32.v"
 `include "Unidade_Controle.v"
 `include "BHmanagement.v"
+`include "Multiplicador.v"
 
 module CPU (
     input wire clk,
@@ -108,6 +111,12 @@ wire [31:0] Half32;
 wire [31:0] Byte32;
 wire [31:0] Byte32U;
 
+wire [31:0] Mult_Hi;
+wire[31:0] Mult_Lo;
+
+wire [31:0] Div_Hi;
+wire [31:0] Div_Lo;
+
 wire [31:0] temp;
 
 
@@ -141,9 +150,15 @@ MemData_mux MemData(MemData_control, RegB_out, {MemDataMSB, RegB_out[15:0]}, {Me
 ShiftLeft_26to28 shiftLeft_26to28({Instr25_21, Instr20_16, Instr15_0}, Instr250_sl);
 ltExt_1to32 lt_ext_1to32(ALU_lt, Flag);
 
+Multiplicador Mult(clk, reset, Mult_control, RegA_out, RegB_out, Mult_Hi, Mult_Lo);
+MorDHi_mux MorDHi(MorDHi_control, Mult_Hi, Div_Hi, MorDHi_out);
+MorDLo_mux MorDLo(MorDLo_control, Mult_Lo, Div_Lo, MorDLo_out);
+Registrador Hi(clk, reset, Hi_write, MorDHi_out, HI);
+Registrador Lo(clk, reset, Lo_write, MorDLo_out, LO);
+
 Unidade_Controle UnidadeControle(clk, reset_in, Instr31_26, Instr15_0[5:0], ALU_gt, ALU_lt, ALU_eq, ALU_of, ALU_neg, ALU_z,
- temp, reset, temp, PC_write, Mem_write, Load_ir, Reg_write, temp, temp, EPC_write, ALUout_write, RegA_write, RegB_write, temp, temp, 
- MemData_write, Iord_control, RegSrc_control, ALUSrcA_control, ShamtSrc_control, ShiftData_control, AluToReg_control, temp, 
- temp, MemData_control, RegDst_control, ALUSrcB_control, ALU_op, Shift_op, PCSource_control, RegData_control);
+ temp, reset, temp, PC_write, Mem_write, Load_ir, Reg_write, Mult_control, temp, EPC_write, ALUout_write, RegA_write, RegB_write, Hi_write, Lo_write, 
+ MemData_write, Iord_control, RegSrc_control, ALUSrcA_control, ShamtSrc_control, ShiftData_control, AluToReg_control, MorDHi_control, 
+ MorDLo_control, MemData_control, RegDst_control, ALUSrcB_control, ALU_op, Shift_op, PCSource_control, RegData_control);
 
 endmodule
