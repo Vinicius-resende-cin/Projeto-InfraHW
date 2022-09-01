@@ -24,7 +24,7 @@ module Unidade_Controle (
                     MemWait_s = 6'd4, // wait for memory read
                     InstWrite_s = 6'd5, // write the instruction in the IR
                     InstDec_s = 6'd6, // get the registers rs, rt; calculates branch address
-                    InstDecSP_s = 6'd7, // get the registers SP, rt;
+                    ALUupdateSP = 6'd7, // write new sp value in A register
                     ALUopSP_s = 6'd8, // ALU operation with SP
                     SPwrite_s = 6'd9, // write in SP from ALU
                     SPtoMem_s = 6'd10, // get memory address from SP
@@ -61,7 +61,7 @@ module Unidade_Controle (
     reg j, jal, beq, bne, ble, bgt, addi, addiu, slti, lui, lb, lh, lw, sb, sh, sw, sll, srl, sra, sllv,
         push, pop, srav, jr, break, mfhi, mflo, rte, mult, div, add, sub, _and, slt;
 
-    always @(posedge clock, posedge RESET_in) begin
+    always @(*) begin
         j = (opcode == 6'h2);
         jal = (opcode == 6'h3);
         beq = (opcode == 6'h4);
@@ -170,14 +170,11 @@ module Unidade_Controle (
                     next_state = InstWrite_s;
                 end
                 InstWrite_s: begin
-                    state <= (pop || push)? InstDecSP_s : InstDec_s;
+                    state <= InstDec_s;
                 end
                 MemWait_s: begin
                     state <= next_state;
                     next_state <= 6'bz;
-                end
-                InstDecSP_s: begin
-                    state <= (push)? ALUopSP_s : MemAdd_s;
                 end
                 InstDec_s: begin
                     state <= (break)? BREAK_s :
@@ -195,13 +192,18 @@ module Unidade_Controle (
                             (lw || lh || lb || sw || sh || sb)? MemAdd_s :
                             (j)? Jump_s :
                             (jal)? JandSave_s :
+                            (push)? ALUopSP_s :
+                            (pop)? MemAdd_s :
                             PCtoEPC_s;
                 end
                 ALUopSP_s: begin
                     state <= SPwrite_s;
                 end
                 SPwrite_s: begin
-                    state <= (push)? SPtoMem_s : PCread_s;
+                    state <= (push)? ALUupdateSP : PCread_s;
+                end
+                ALUupdateSP: begin
+                    state <=  SPtoMem_s;
                 end
                 SPtoMem_s: begin
                     state <= MemWrite_s;
@@ -282,7 +284,7 @@ module Unidade_Controle (
                     state <= PCread_s;
                 end 
                 ALUop_s: begin
-                    state <= ALUtoReg_s;
+                    state <= (O && (add || sub || addi))? PCtoEPC_s : ALUtoReg_s;
                 end
                 ALUtoReg_s: begin
                     state <= PCread_s;
@@ -350,18 +352,8 @@ module Unidade_Controle (
                 IRwrite = 1'b1;
                 PCwrite = 1'b1;
             end
-            InstDecSP_s: begin
-                RegSrc = 1'b0;
-                AW = 1'b1;
-                BW = 1'b1;
-                ALUsrcA = 1'b0;
-                ALUsrcB = 2'b11;
-                ALUop = 3'b001;
-                ALUtoReg = 1'b0;
-                ALUoutW = 1'b1;
-            end
             InstDec_s: begin
-                RegSrc = 1'b1;
+                RegSrc = (push || pop)? 1'b0 : 1'b1;
                 AW = 1'b1;
                 BW = 1'b1;
                 ALUsrcA = 1'b0;
@@ -373,7 +365,7 @@ module Unidade_Controle (
             ALUopSP_s: begin
                 ALUsrcA = 1'b1;
                 ALUsrcB = 2'b01;
-                ALUop = 3'b010;
+                ALUop = (push)? 3'b010 : 3'b001;
                 ALUtoReg = 1'b0;
                 ALUoutW = 1'b1;
             end
@@ -381,6 +373,9 @@ module Unidade_Controle (
                 RegData = 4'b0010;
                 RegDst = 2'b10;
                 RegWrite = 1'b1;
+            end
+            ALUupdateSP: begin
+                AW = 1'b1;
             end
             SPtoMem_s: begin
                 ALUsrcA = 1'b1;
@@ -392,7 +387,7 @@ module Unidade_Controle (
             MemAdd_s: begin
                 ALUsrcA = 1'b1;
                 ALUsrcB = 2'b10;
-                ALUop = 3'b001;
+                ALUop = (push || pop)? 3'b000 : 3'b001;
                 ALUtoReg = 1'b0;
                 ALUoutW = 1'b1;
                 IorD = 1'b1;

@@ -93,7 +93,7 @@ wire [31:0] AluToReg_out;
 
 wire [2:0] PCSource_control;
 wire [31:0] InstrunctionToPCSource;
-wire [27:0] Instr250_sl; // Igor vai mandar o shift left depois
+wire [27:0] Instr250_sl;
 assign InstrunctionToPCSource = {PC_out[31:28], Instr250_sl};
 wire [31:0] EPC_out;
 wire [31:0] PCSource_out;
@@ -121,7 +121,9 @@ wire [31:0] Div_Lo;
 wire [31:0] MorDHi_out;
 wire [31:0] MorDLo_out;
 
-wire [31:0] temp;
+wire break;
+
+wire temp;
 
 
 Registrador PC(clk, reset, PC_write, PCSource_out, PC_out);
@@ -161,7 +163,7 @@ Registrador Hi(clk, reset, Hi_write, MorDHi_out, HI);
 Registrador Lo(clk, reset, Lo_write, MorDLo_out, LO);
 
 Unidade_Controle UnidadeControle(clk, reset_in, Instr31_26, Instr15_0[5:0], ALU_gt, ALU_lt, ALU_eq, ALU_of, ALU_neg, ALU_z,
- temp, reset, temp, PC_write, Mem_write, Load_ir, Reg_write, Mult_control, temp, EPC_write, ALUout_write, RegA_write, RegB_write, Hi_write, Lo_write, 
+ temp, reset, break, PC_write, Mem_write, Load_ir, Reg_write, Mult_control, temp, EPC_write, ALUout_write, RegA_write, RegB_write, Hi_write, Lo_write, 
  MemData_write, Iord_control, RegSrc_control, ALUSrcA_control, ShamtSrc_control, ShiftData_control, AluToReg_control, MorDHi_control, 
  MorDLo_control, MemData_control, RegDst_control, ALUSrcB_control, ALU_op, Shift_op, PCSource_control, RegData_control);
 
