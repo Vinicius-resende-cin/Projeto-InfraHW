@@ -173,8 +173,7 @@ module Unidade_Controle (
                     state <= InstDec_s;
                 end
                 MemWait_s: begin
-                    state <= next_state;
-                    next_state <= (MemDataW_s)? RoutToPC_s : 6'bz;
+                    state <= (next_state == RoutToPC_s)? MemDataW_s : next_state;
                 end
                 InstDec_s: begin
                     state <= (break)? BREAK_s :
@@ -217,7 +216,6 @@ module Unidade_Controle (
                 end
                 MemDataW_s: begin
                     state <= (next_state == RoutToPC_s)? next_state : ((lw || lh || lb || pop)? MemToReg_s : MemWrite_s);
-                    next_state <= 6'bz; 
                 end
                 MemWrite_s: begin
                     state <= PCread_s;
@@ -242,7 +240,7 @@ module Unidade_Controle (
                 end
                 GoToRout_s: begin
                     state <= MemWait_s;
-                    next_state = MemDataW_s;
+                    next_state = RoutToPC_s;
                 end
                 RoutToPC_s: begin
                     state <= PCread_s;
