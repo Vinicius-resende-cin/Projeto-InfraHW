@@ -19,6 +19,7 @@
 `include "Unidade_Controle.v"
 `include "BHmanagement.v"
 `include "Multiplicador.v"
+`include "Divisor.v"
 
 module CPU (
     input wire clk,
@@ -123,8 +124,6 @@ wire [31:0] MorDLo_out;
 
 wire break;
 
-wire temp;
-
 
 Registrador PC(clk, reset, PC_write, PCSource_out, PC_out);
 IorD_mux Iord(Iord_control, PC_out, Alu_Out, Iord_out);
@@ -157,13 +156,14 @@ ShiftLeft_26to28 shiftLeft_26to28({Instr25_21, Instr20_16, Instr15_0}, Instr250_
 ltExt_1to32 lt_ext_1to32(ALU_lt, Flag);
 
 Multiplicador Mult(clk, reset, Mult_control, RegA_out, RegB_out, Mult_Hi, Mult_Lo);
+Divisor Div(clk, reset, Div_control, RegA_out, RegB_out, Div_Hi, Div_Lo, div0);
 MorDHi_mux MorDHi(MorDHi_control, Mult_Hi, Div_Hi, MorDHi_out);
 MorDLo_mux MorDLo(MorDLo_control, Mult_Lo, Div_Lo, MorDLo_out);
 Registrador Hi(clk, reset, Hi_write, MorDHi_out, HI);
 Registrador Lo(clk, reset, Lo_write, MorDLo_out, LO);
 
 Unidade_Controle UnidadeControle(clk, reset_in, Instr31_26, Instr15_0[5:0], ALU_gt, ALU_lt, ALU_eq, ALU_of, ALU_neg, ALU_z,
- temp, reset, break, PC_write, Mem_write, Load_ir, Reg_write, Mult_control, temp, EPC_write, ALUout_write, RegA_write, RegB_write, Hi_write, Lo_write, 
+ div0, reset, break, PC_write, Mem_write, Load_ir, Reg_write, Mult_control, Div_control, EPC_write, ALUout_write, RegA_write, RegB_write, Hi_write, Lo_write, 
  MemData_write, Iord_control, RegSrc_control, ALUSrcA_control, ShamtSrc_control, ShiftData_control, AluToReg_control, MorDHi_control, 
  MorDLo_control, MemData_control, RegDst_control, ALUSrcB_control, ALU_op, Shift_op, PCSource_control, RegData_control);
 
