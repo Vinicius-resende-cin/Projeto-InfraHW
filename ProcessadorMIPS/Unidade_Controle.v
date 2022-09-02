@@ -190,7 +190,7 @@ module Unidade_Controle (
                             (sllv || srav)? ShiftReg_s :
                             (lw || lh || lb || sw || sh || sb)? MemAdd_s :
                             (j)? Jump_s :
-                            (jal)? JandSave_s :
+                            (jal)? StorePC_s :
                             (push)? ALUopSP_s :
                             (pop)? MemAdd_s :
                             PCtoEPC_s;
@@ -261,7 +261,7 @@ module Unidade_Controle (
                     state <= (bne)? ((ET)? PCread_s : ALUtoPC_s) :
                             (beq)? ((ET)? ALUtoPC_s : PCread_s) :
                             (bgt)? ((GT)? ALUtoPC_s : PCread_s) :
-                            (ble)? ((LT)? ALUtoPC_s : PCread_s) :
+                            (ble)? ((LT || ET)? ALUtoPC_s : PCread_s) :
                             6'bx;
                 end
                 ALUtoPC_s: begin
@@ -418,10 +418,10 @@ module Unidade_Controle (
             end
             JandSave_s: begin
                 PCsrc = 3'b010;
-                PCwrite = 1'b1;
                 RegData = 4'b0010;
                 RegDst = 2'b11;
                 RegWrite = 1'b1;
+                PCwrite = 1'b1;
             end
             PCtoEPC_s: begin
                 ALUsrcA = 1'b0;

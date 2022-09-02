@@ -40,7 +40,7 @@ always @(*) begin
         IDLE: begin
             next_counter = 6'd0;
 
-            if(start) begin
+            if(start && ~div0) begin
                 next_state = START;
                 sign = A[31] ^ B[31];
                 next_A = (A[31])? ~A + 1 : A;
