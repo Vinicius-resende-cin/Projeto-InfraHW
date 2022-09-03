@@ -72,7 +72,7 @@ always @(*) begin
             next_state = (counter == 6'd32)? IDLE : pres_state;
             
             next_Q = (next_counter == 6'd32 && sign == 1'b1)? ~next_Q + 1 : next_Q;
-            next_R = (next_counter == 6'd32 && sign == 1'b1)? ~next_R + 1 : next_R;
+            next_R = (next_counter == 6'd32 && A[0])? ~next_R + 1 : next_R;
         end
     endcase
 end
